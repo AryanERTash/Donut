@@ -1,5 +1,5 @@
 /*
-	yt: aaryanvz
+
 	github: AryanERTash
 	A spinning donut
 */
@@ -13,7 +13,7 @@
 
 // width and height of printing buffer
 const unsigned int bufferwidth = 80;
-const unsigned int bufferheight = 30;	// tweak the height such that it dont overflow the console and use full screen console
+const unsigned int bufferheight = 30; // tweak the height such that it dont overflow the console and use full screen console
 
 // sampling space for angles
 const double thetaspacing = 0.02;
@@ -46,29 +46,29 @@ void apply_transform(double *x, double *y, double *z)
 
 	*/
 
-   double prevx = *x, prevy = *y, prevz = *z;
+	double prevx = *x, prevy = *y, prevz = *z;
 
 	// tranformation along y(rotation of ring to make donut)
 
-   *x = prevx * cosphi + prevz * sinphi;
-   *z = -prevx * sinphi + cosphi * prevz;
+	*x = prevx * cosphi + prevz * sinphi;
+	*z = -prevx * sinphi + cosphi * prevz;
 
-   prevx = *x, prevy = *y, prevz = *z;
+	prevx = *x, prevy = *y, prevz = *z;
 
 	// tranformation along x (rotation of full donut)
 
-   *y = prevy * cosa - prevz * sina;
-   *z = prevy * sina + prevz * cosa;
+	*y = prevy * cosa - prevz * sina;
+	*z = prevy * sina + prevz * cosa;
 
-   prevx = *x, prevy = *y, prevz = *z;
+	prevx = *x, prevy = *y, prevz = *z;
 
-	//tranformation along the z axis(full donut)
+	// tranformation along the z axis(full donut)
 
-   *x = prevx * cosb - prevy * sinb;
-   *y = prevx * sinb + prevy * cosb;
+	*x = prevx * cosb - prevy * sinb;
+	*y = prevx * sinb + prevy * cosb;
 	/*
 		if we want we can apply y tranform again to rotate full donut aroung y
-		
+
 		Other transformation like shear, scale etc can also be applied wrt any point in space
 
 	*/
@@ -76,15 +76,15 @@ void apply_transform(double *x, double *y, double *z)
 
 int main(int argc, char const *argv[])
 {
-	// assume a axis that follow right hand rule and z is coming out of screen 
+	// assume a axis that follow right hand rule and z is coming out of screen
 
-	char framebuffer[bufferheight][bufferwidth];	//framebuffer contains the required data to print
-	double zbuffer[bufferheight][bufferwidth];	/*	zbuffer contains the z coord of a given pixel 
-																	,the value can be used to compare and update in case a pixel
-																	has higher z coordinate
-																*/
+	char framebuffer[bufferheight][bufferwidth]; // framebuffer contains the required data to print
+	double zbuffer[bufferheight][bufferwidth];	 /*	zbuffer contains the z coord of a given pixel
+																	 ,the value can be used to compare and update in case a pixel
+																	 has higher z coordinate
+																 */
 
-	printf("\x1b[2J");	//  i copied it, it is some escape sequence
+	printf("\x1b[2J"); //  i copied it, it is some escape sequence
 
 	while (1)
 	{
@@ -97,14 +97,14 @@ int main(int argc, char const *argv[])
 					inititalize framebuffer with empty space and zbuffer with a big negative value
 					However in the orignal implementation the way to this is diffrent
 
-					Usually in 3d graphic we may resort to use of homogeneous coordinates but here for simplicity 
+					Usually in 3d graphic we may resort to use of homogeneous coordinates but here for simplicity
 					we limit ourself
 				*/
-				framebuffer[i][j] = ' ';	
+				framebuffer[i][j] = ' ';
 				zbuffer[i][j] = INT_MIN;
 			}
 		}
-		//calculate trig funcation for A and B
+		// calculate trig funcation for A and B
 		sina = sin(A);
 		cosa = cos(A);
 
@@ -117,44 +117,45 @@ int main(int argc, char const *argv[])
 			cosphi = cos(phi);
 			for (theta = 0; theta <= 2 * PI; theta += thetaspacing)
 			{
-				costheta = cos(theta);	
+				costheta = cos(theta);
 				sintheta = sin(theta);
 
-				double x = center_rad + ring_rad * costheta;	// x cooridnate of a point on ring
-				double y = ring_rad * sintheta;	// y coordinate of a point on ring
-				double z = 0;	//z initially is zero because ring is in xy plane
+				double x = center_rad + ring_rad * costheta; // x cooridnate of a point on ring
+				double y = ring_rad * sintheta;				 // y coordinate of a point on ring
+				double z = 0;								 // z initially is zero because ring is in xy plane
 
+				apply_transform(&x, &y, &z); // apply tranform !Inefficient
 
-				apply_transform(&x, &y, &z);	//apply tranform !Inefficient
+				double nx = costheta, ny = sintheta, nz = 0; /* The normal will have same direction as (costheta, sintheta)
+																				 (refer to diagram)
+																			 */
 
-				double nx = costheta, ny = sintheta, nz = 0; 	/* The normal will have same direction as (costheta, sintheta)
-																					(refer to diagram)
-																				*/
+				apply_transform(&nx, &ny, &nz); // apply tranfrom on the normals
 
-				apply_transform(&nx, &ny, &nz);	//apply tranfrom on the normals
-
-				double dotproduct = (0 * nx) + (-1 * ny) + (1 * nz);	//calculate dot product
+				double dotproduct = (0 * nx) + (1 * ny) + (1 * nz); // calculate dot product
 				/*
 					The light vector i choose is (0 -1 1), you can choose any vector(but
 					 you have to take care of fitting it in index of lumchars)
 
 					The dot product will always be smaller or equal to product of magnitude of both vectors
-					since normal vector magnitude is root cos^2 + sin^2 which is one and our lightning vector 
+					since normal vector magnitude is root cos^2 + sin^2 which is one and our lightning vector
 					has magnitude root 2 , their dot product will always have magnitude <=  root 2
 				*/
-				int lum_index = dotproduct  * 8;	// adjust the value for index,
-														//  if you change light vector you may have diffrent constant for adjusting/normalizing
-				
-				//map x y to the framebuffer in center
-				int _x = round(x+bufferwidth/2);
-				int _y = round((y+bufferheight)*0.5);	// the factor 0.5 is used to scael down console height
-				_y = bufferheight - _y - 1;	//axis flip in array
+				int lum_index = dotproduct * 8; // adjust the value for index,
+												//  if you change light vector you may have diffrent constant for adjusting/normalizing
 
-				if(_x>=0 && _y>=0 && _x<bufferwidth && _y <bufferheight) {
-					if(z>zbuffer[_y][_x]) {
-						//update zbuffer in case the new value is greater
+				// map x y to the framebuffer in center
+				int _x = round(x + bufferwidth / 2);
+				int _y = round((y + bufferheight) * 0.5); // the factor 0.5 is used to scael down console height
+				_y = bufferheight - _y - 1;				  // axis flip in array
+
+				if (_x >= 0 && _y >= 0 && _x < bufferwidth && _y < bufferheight)
+				{
+					if (z > zbuffer[_y][_x])
+					{
+						// update zbuffer in case the new value is greater
 						zbuffer[_y][_x] = z;
-						framebuffer[_y][_x] = lumchars[(lum_index >= 0) ? lum_index : 0];	
+						framebuffer[_y][_x] = lumchars[(lum_index >= 0) ? lum_index : 0];
 					}
 				}
 			}
@@ -167,7 +168,7 @@ int main(int argc, char const *argv[])
 			printf("\t\t\t");
 			for (int j = 0; j < bufferwidth; ++j)
 			{
-				//printing
+				// printing
 				putchar(framebuffer[i][j]);
 			}
 			putchar('\n');
@@ -175,7 +176,6 @@ int main(int argc, char const *argv[])
 		usleep(5000);
 		A += Aspacing;
 		B += Bspacing;
-		
 	}
 
 	return 0;
