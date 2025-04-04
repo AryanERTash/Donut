@@ -11,7 +11,9 @@ This program generates an animated 3D torus (donut) using ASCII characters and r
 - The final 2D projection is displayed in the terminal.
 - A **z-buffer** ensures correct visibility handling.
 
-![Mathematical Representation](https://github.com/user-attachments/assets/f6707c96-effd-4ff5-9933-7f8a18c31f29)
+![Mathematical Representation](images/lv.png)
+![Donut](images/donut.png)
+
 
 ## 🚀 Installation & Usage
 
